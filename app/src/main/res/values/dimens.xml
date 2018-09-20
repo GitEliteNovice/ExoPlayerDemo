@@ -1,0 +1,9 @@
+<resources>
+    <dimen name="fab_margin">16dp</dimen>
+    <dimen name="av_default_border_width">2dp</dimen>
+
+
+    <dimen name="rippleStrokeWidth">4dp</dimen>
+    <dimen name="rippleRadius">4dp</dimen>
+
+</resources>

@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">ExoPlayerDemo</string>
+    <!--http://rsi24.in/video/2.mp4-->
+    <string name="video_base_url">http://rsi24.in/video/</string>
+    <string name="video_count">12</string>
+    <string name="ringtone_base_url">http://www.android-ios.co.in/Dummy/RingTones/</string>
+    <string name="ringtone_count">19</string>
+</resources>
