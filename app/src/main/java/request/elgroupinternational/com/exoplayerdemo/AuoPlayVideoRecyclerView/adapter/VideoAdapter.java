@@ -4,8 +4,9 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.net.Uri;
-import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -16,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
@@ -31,11 +33,12 @@ import com.google.android.exoplayer2.util.Util;
 
 import java.util.ArrayList;
 
-import request.elgroupinternational.com.exoplayerdemo.AuoPlayVideoRecyclerView.interfaces.PlayerCallbacks;
-import request.elgroupinternational.com.exoplayerdemo.R;
+import request.elgroupinternational.com.exoplayerdemo.AuoPlayVideoRecyclerView.SliderLayoutManager;
 import request.elgroupinternational.com.exoplayerdemo.AuoPlayVideoRecyclerView.VideoActivity;
 import request.elgroupinternational.com.exoplayerdemo.AuoPlayVideoRecyclerView.VideoModel;
+import request.elgroupinternational.com.exoplayerdemo.AuoPlayVideoRecyclerView.interfaces.PlayerCallbacks;
 import request.elgroupinternational.com.exoplayerdemo.AuoPlayVideoRecyclerView.interfaces.VideoItemClicked;
+import request.elgroupinternational.com.exoplayerdemo.R;
 import request.elgroupinternational.com.exoplayerdemo.utils.ExoPlayerHandler;
 import request.elgroupinternational.com.exoplayerdemo.utils.RippleBackground;
 
@@ -52,6 +55,10 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
     private int mResumeWindow;
     private long mResumePosition;
     private VideoItemClicked videoItemClicked;
+
+    private int currentSelected = 0;
+    private SliderLayoutManager mLayoutManager;
+    private RecyclerView mRecyclerView;
     public VideoAdapter(final Activity context, ArrayList<VideoModel> arrayList) {
         this.arrayList = arrayList;
         this.context = context;
@@ -60,7 +67,6 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
         videoItemClicked= (VideoItemClicked) context;
 
     }
-
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.video_row_layout, viewGroup, false);
@@ -90,7 +96,9 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
             DefaultHttpDataSourceFactory httpDataSourceFactory = new DefaultHttpDataSourceFactory(userAgent, null, DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS, DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS, true);
             DefaultDataSourceFactory dataSourceFactory = new DefaultDataSourceFactory(context, null, httpDataSourceFactory);
             DefaultExtractorsFactory extractorsFactory = new DefaultExtractorsFactory();
-            MediaSource mVideoSource = new ExtractorMediaSource(Uri.parse(arrayList.get(i).getVideo_url()), dataSourceFactory, extractorsFactory, null, null);
+
+           MediaSource mVideoSource = new ExtractorMediaSource(Uri.parse(arrayList.get(i).getVideo_url()), dataSourceFactory, extractorsFactory, null, null);
+    //        MediaSource mVideoSource = new ExtractorMediaSource.Factory(dataSourceFactory).setExtractorsFactory(extractorsFactory).createMediaSource(Uri.parse(arrayList.get(i).getVideo_url()));
             viewHolder.mExoPlayerView.setPlayer(ExoPlayerHandler.getInstance().getPlayer(this));
             LoopingMediaSource loopingSource = new LoopingMediaSource(mVideoSource, 1);
             if (ExoPlayerHandler.getInstance().getPlayer(this)==null){
@@ -135,14 +143,63 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
         return arrayList.size();
     }
 
-    public void pauseplayerBuffer()
-    {
-    if (currentholder!=null){
-        currentholder.rippleBackground.stopRippleAnimation();
-        currentholder.rippleBackground.setVisibility(View.GONE);
-    }
+    public void pauseplayer() {
+        setPlayPause(false);
     }
 
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+   //     MyLog.e("onAttachedToRecyclerView");
+        mRecyclerView = recyclerView;
+        mLayoutManager = ((SliderLayoutManager) mRecyclerView.getLayoutManager());
+        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                int firstVisible = layoutManager.findFirstVisibleItemPosition();
+                int lastVisible = layoutManager.findLastVisibleItemPosition();
+                int top = mRecyclerView.getChildAt(0).getTop();
+                int height = mRecyclerView.getChildAt(0).getHeight();
+
+                //MyLog.d("firstVisible: " + firstVisible + "  top: " + top + "  height: " + height);
+
+                if (top < height / 3 * (-1)) {
+                    firstVisible++;
+                }
+
+                if (lastVisible == getItemCount() - 1) {
+                    int lastViewTop = mRecyclerView.getChildAt(mRecyclerView.getChildCount() - 1).getBottom();
+                    int listHeight = mRecyclerView.getHeight();
+
+                    if (lastViewTop - listHeight < height / 4) {
+                        firstVisible++;
+                    }
+
+/*                    MyLog.d("getChildCount: " + mRecyclerView.getChildCount()
+                            + "  lastViewTop: " + lastViewTop
+                            + "  listHeight: " + listHeight
+                            + "  lastViewTop - listHeight: " + (lastViewTop - listHeight)
+                    );*/
+                }
+
+                if (firstVisible != currentSelected) {
+
+                    VideoAdapter.ViewHolder viewHolder= (VideoAdapter.ViewHolder) mRecyclerView.findViewHolderForLayoutPosition(firstVisible);
+                    start_stopplayer(firstVisible,viewHolder,currentSelected);
+                    currentSelected=firstVisible;
+
+                 //   onSelectedItemChanged(firstVisible);
+                }else if (firstVisible ==0&& currentSelected==0){
+                    VideoAdapter.ViewHolder viewHolder= (VideoAdapter.ViewHolder) mRecyclerView.findViewHolderForLayoutPosition(firstVisible);
+                    start_stopplayer(firstVisible,viewHolder,-1 );
+
+                }
+            }
+        });
+    }
     public void start_stopplayer(int pos,ViewHolder viewHolder,int prevposition_){
         currentholder=viewHolder;
         if (prevposition_==-1){

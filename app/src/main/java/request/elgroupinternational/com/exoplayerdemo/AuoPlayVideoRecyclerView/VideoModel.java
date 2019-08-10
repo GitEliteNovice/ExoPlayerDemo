@@ -1,6 +1,8 @@
 package request.elgroupinternational.com.exoplayerdemo.AuoPlayVideoRecyclerView;
 
-public class VideoModel {
+
+
+public class VideoModel  {
 private String video_url;
 private boolean is_selected;
 
@@ -20,4 +22,6 @@ private boolean is_selected;
     public void setIs_selected(boolean is_selected) {
         this.is_selected = is_selected;
     }
+
+
 }

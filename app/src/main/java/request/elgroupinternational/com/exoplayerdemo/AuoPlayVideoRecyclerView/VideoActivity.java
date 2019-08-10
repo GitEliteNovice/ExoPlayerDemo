@@ -4,27 +4,22 @@ import android.content.pm.ActivityInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.RequiresApi;
-import android.support.design.widget.CoordinatorLayout;
-
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.LinearLayout;
 
-
 import java.util.ArrayList;
 
-import request.elgroupinternational.com.exoplayerdemo.R;
-import request.elgroupinternational.com.exoplayerdemo.utils.Constant;
 import request.elgroupinternational.com.exoplayerdemo.AuoPlayVideoRecyclerView.adapter.VideoAdapter;
 import request.elgroupinternational.com.exoplayerdemo.AuoPlayVideoRecyclerView.interfaces.VideoItemClicked;
+import request.elgroupinternational.com.exoplayerdemo.R;
 import request.elgroupinternational.com.exoplayerdemo.utils.ExoPlayerHandler;
 
 import static android.widget.LinearLayout.VERTICAL;
 
-public class VideoActivity extends AppCompatActivity implements VideoItemClicked, View.OnClickListener {
+public class VideoActivity extends AppCompatActivity implements VideoItemClicked, View.OnClickListener{
    RecyclerView video_recyclerView;
    VideoAdapter adapterVideoList;
    boolean ispotrait=true;
@@ -33,6 +28,7 @@ public class VideoActivity extends AppCompatActivity implements VideoItemClicked
   //  Snackbar snackbar;
     LinearLayout video_main_layout;
     int prevposition=-1;
+     SliderLayoutManager layoutmanger;
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +43,7 @@ public class VideoActivity extends AppCompatActivity implements VideoItemClicked
     private void setUI() {
 
         video_recyclerView = findViewById(R.id.video_recyclerView);
-        final LinearLayoutManager layoutmanger=new LinearLayoutManager(this);
+      layoutmanger=new SliderLayoutManager(this);
         video_recyclerView.setLayoutManager(layoutmanger);
         DividerItemDecoration itemDecor = new DividerItemDecoration(VideoActivity.this, VERTICAL);
         video_recyclerView.addItemDecoration(itemDecor);
@@ -56,10 +52,13 @@ public class VideoActivity extends AppCompatActivity implements VideoItemClicked
         video_recyclerView.setAdapter(adapterVideoList);
 
         video_main_layout=findViewById(R.id.video_main_layout);
-        video_recyclerView.setOnScrollChangeListener(new View.OnScrollChangeListener() {
-            @Override
+
+            /*  video_recyclerView.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+            @Overri de
             public void onScrollChange(View view, int i, int i1, int i2, int i3) {
-                int completeVisiblePostion = layoutmanger.findFirstCompletelyVisibleItemPosition();
+
+
+                int completeVisiblePostion = layoutmanger.findLastCompletelyVisibleItemPosition();
                 VideoAdapter.ViewHolder viewHolder= (VideoAdapter.ViewHolder) video_recyclerView.findViewHolderForLayoutPosition(completeVisiblePostion);
            if (completeVisiblePostion==-1){
                completeVisiblePostion=0;
@@ -71,7 +70,34 @@ public class VideoActivity extends AppCompatActivity implements VideoItemClicked
                 }
 
             }
+        });*/
+/*
+        video_recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int scrollState) {
+                mScrollState = scrollState;
+                if(scrollState == RecyclerView.SCROLL_STATE_IDLE && !urls.isEmpty()){
+
+                    mListItemVisibilityCalculator.onScrollStateIdle(
+                            mItemsPositionGetter,
+                            layoutmanger.findFirstVisibleItemPosition(),
+                            layoutmanger.findLastVisibleItemPosition());
+                }
+            }
+
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                if(!urls.isEmpty()){
+                    mListItemVisibilityCalculator.onScroll(
+                            mItemsPositionGetter,
+                            layoutmanger.findFirstVisibleItemPosition(),
+                            layoutmanger.findLastVisibleItemPosition() - layoutmanger.findFirstVisibleItemPosition() + 1,
+                            mScrollState);
+                }
+            }
         });
+        mItemsPositionGetter = new RecyclerViewItemPositionGetter(layoutmanger, video_recyclerView);*/
 
         /*    snackbar = Snackbar
                 .make(video_main_layout, "Downloading!", Snackbar.LENGTH_LONG)
@@ -85,10 +111,11 @@ public class VideoActivity extends AppCompatActivity implements VideoItemClicked
     }
     private ArrayList<VideoModel> prepareData() {
        int video_count = Integer.parseInt(getResources().getString(R.string.video_count));
-       String video_url = getResources().getString(R.string.video_base_url);
+       String[] video_urls = getResources().getStringArray(R.array.urls);
        urls = new ArrayList<>();
-        for (int i = 1; i < video_count; i++) {
-           VideoModel videoModel=new VideoModel(video_url+i+ Constant.StringKey.MP4,false);
+
+       for (int i = 0; i < video_urls.length-1; i++) {
+           VideoModel videoModel=new VideoModel(video_urls[i],false);
             urls.add(videoModel);
 
         }
@@ -104,10 +131,10 @@ public class VideoActivity extends AppCompatActivity implements VideoItemClicked
     protected void onPause() {
         super.onPause();
         ExoPlayerHandler.getInstance().pauseExoPlayer();
-        if (adapterVideoList!=null){
-            adapterVideoList.pauseplayerBuffer();
+        /*if (adapterVideoList!=null){
+            adapterVideoList.pauseplayer();
         }
-
+*/
     }
 
     @Override
@@ -115,6 +142,15 @@ public class VideoActivity extends AppCompatActivity implements VideoItemClicked
         super.onDestroy();
 
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(!urls.isEmpty()){
+            // need to call this method from list view handler in order to have filled list
+
+        }
     }
 
     @Override
@@ -223,4 +259,5 @@ public class VideoActivity extends AppCompatActivity implements VideoItemClicked
     public void onClick(View view) {
 
     }
+
 }
